@@ -1,0 +1,70 @@
+---
+/**
+ * Base layout for all pages.
+ *
+ * Wires up EmDash head/body components for plugin integration,
+ * includes global styles, header, footer, and cart drawer.
+ */
+import "../styles/global.css";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import CartDrawer from "../components/CartDrawer.astro";
+import { EmDashHead, EmDashBodyStart, EmDashBodyEnd } from "emdash/ui";
+import { createPublicPageContext } from "emdash";
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string | null;
+  kind?: "content" | "custom";
+  pageType?: string;
+  content?: { collection: string; id: string; slug?: string | null };
+  articleMeta?: {
+    publishedTime?: string | null;
+    modifiedTime?: string | null;
+    author?: string | null;
+  };
+}
+
+const {
+  title,
+  description = "",
+  image = null,
+  kind = "custom",
+  pageType,
+  content,
+  articleMeta,
+} = Astro.props;
+
+const page = createPublicPageContext({
+  Astro,
+  kind,
+  pageType,
+  title,
+  description,
+  image,
+  content,
+  articleMeta,
+  siteName: "Store",
+});
+---
+
+<!doctype html>
+<html lang="en" class="bg-background text-foreground antialiased">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <EmDashHead page={page} />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <EmDashBodyStart page={page} />
+    <Header />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+    <CartDrawer />
+    <EmDashBodyEnd page={page} />
+  </body>
+</html>

@@ -1,0 +1,283 @@
+---
+/**
+ * Checkout page with shipping address form and order summary.
+ * Submits to the storefront checkout API, which returns a Stripe checkout URL.
+ */
+import Base from "../layouts/Base.astro";
+
+export const prerender = false;
+---
+
+<Base title="Checkout — Store" description="Complete your purchase.">
+  <section class="py-12 sm:py-16">
+    <div class="mx-auto max-w-5xl px-6">
+      <h1 class="text-3xl font-bold tracking-tight text-foreground">Checkout</h1>
+
+      <div class="mt-8 grid gap-8 lg:grid-cols-5">
+        <!-- Form -->
+        <div class="lg:col-span-3">
+          <form id="checkout-form" class="space-y-6">
+            <!-- Customer info -->
+            <div class="rounded-lg border border-border bg-card p-6">
+              <h2 class="text-lg font-semibold text-foreground">Contact Information</h2>
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="name" class="block text-sm font-medium text-foreground">Full Name</label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    class="mt-1.5 block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div>
+                  <label for="email" class="block text-sm font-medium text-foreground">Email</label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    class="mt-1.5 block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                    placeholder="john@example.com"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Shipping address -->
+            <div class="rounded-lg border border-border bg-card p-6">
+              <h2 class="text-lg font-semibold text-foreground">Shipping Address</h2>
+              <div class="mt-4 space-y-4">
+                <div>
+                  <label for="line1" class="block text-sm font-medium text-foreground">Address</label>
+                  <input
+                    id="line1"
+                    name="line1"
+                    type="text"
+                    required
+                    class="mt-1.5 block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                    placeholder="123 Main St"
+                  />
+                </div>
+                <div class="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <label for="city" class="block text-sm font-medium text-foreground">City</label>
+                    <input
+                      id="city"
+                      name="city"
+                      type="text"
+                      required
+                      class="mt-1.5 block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                      placeholder="San Francisco"
+                    />
+                  </div>
+                  <div>
+                    <label for="state" class="block text-sm font-medium text-foreground">State</label>
+                    <input
+                      id="state"
+                      name="state"
+                      type="text"
+                      required
+                      class="mt-1.5 block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                      placeholder="CA"
+                    />
+                  </div>
+                  <div>
+                    <label for="postalCode" class="block text-sm font-medium text-foreground">ZIP Code</label>
+                    <input
+                      id="postalCode"
+                      name="postalCode"
+                      type="text"
+                      required
+                      class="mt-1.5 block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                      placeholder="94102"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label for="country" class="block text-sm font-medium text-foreground">Country</label>
+                  <select
+                    id="country"
+                    name="country"
+                    class="mt-1.5 block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="US">United States</option>
+                    <option value="CA">Canada</option>
+                    <option value="GB">United Kingdom</option>
+                    <option value="AU">Australia</option>
+                    <option value="DE">Germany</option>
+                    <option value="FR">France</option>
+                    <option value="JP">Japan</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Error message -->
+            <div id="checkout-error" class="hidden rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-foreground"></div>
+
+            <!-- Submit -->
+            <button
+              id="checkout-submit"
+              type="submit"
+              class="w-full rounded-md bg-primary py-3 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            >
+              Proceed to Payment
+            </button>
+
+            <p class="text-center text-xs text-muted-foreground">
+              You will be redirected to Stripe to complete your payment securely.
+            </p>
+          </form>
+        </div>
+
+        <!-- Order summary sidebar -->
+        <div class="lg:col-span-2">
+          <div class="sticky top-24 rounded-lg border border-border bg-card p-6">
+            <h2 class="text-lg font-semibold text-foreground">Order Summary</h2>
+            <div id="checkout-items" class="mt-4 divide-y divide-border">
+              <div class="animate-pulse py-3">
+                <div class="h-4 w-3/4 rounded bg-secondary"></div>
+                <div class="mt-1 h-4 w-1/4 rounded bg-secondary"></div>
+              </div>
+            </div>
+            <div class="mt-4 space-y-2 border-t border-border pt-4">
+              <div class="flex justify-between text-sm">
+                <span class="text-muted-foreground">Subtotal</span>
+                <span id="checkout-subtotal" class="text-foreground">$0.00</span>
+              </div>
+              <div id="checkout-discount-row" class="hidden flex justify-between text-sm">
+                <span class="text-muted-foreground">Discount</span>
+                <span id="checkout-discount" class="text-foreground">-$0.00</span>
+              </div>
+              <div class="flex justify-between border-t border-border pt-2">
+                <span class="font-semibold text-foreground">Total</span>
+                <span id="checkout-total" class="font-semibold text-foreground">$0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script is:inline>
+  var SESSION_KEY = "store_cart_session";
+
+  function getSessionId() {
+    var id = localStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  }
+
+  // Load cart summary
+  var sessionId = localStorage.getItem(SESSION_KEY);
+  if (sessionId) {
+    fetch("/_emdash/api/plugins/commerce/storefront/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: sessionId }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        var cart = res.data ?? res;
+        var items = cart.items ?? [];
+        var container = document.getElementById("checkout-items");
+        if (!container) return;
+
+        if (items.length === 0) {
+          container.innerHTML = '<p class="py-3 text-sm text-muted-foreground">Your cart is empty.</p>';
+          return;
+        }
+
+        container.innerHTML = items
+          .map(function (item) {
+            return (
+              '<div class="flex justify-between py-3">' +
+              "<div>" +
+              '<p class="text-sm font-medium text-foreground">' + (item.name || "Product") + "</p>" +
+              '<p class="text-xs text-muted-foreground">Qty: ' + (item.quantity || 1) + "</p>" +
+              "</div>" +
+              '<p class="text-sm font-medium text-foreground">$' + (((item.price || 0) * (item.quantity || 1)) / 100).toFixed(2) + "</p>" +
+              "</div>"
+            );
+          })
+          .join("");
+
+        var subtotal = items.reduce(function (sum, i) {
+          return sum + (i.price || 0) * (i.quantity || 1);
+        }, 0);
+        document.getElementById("checkout-subtotal").textContent = "$" + (subtotal / 100).toFixed(2);
+
+        var discountAmount = cart.discountAmount || 0;
+        if (discountAmount > 0) {
+          document.getElementById("checkout-discount-row").classList.remove("hidden");
+          document.getElementById("checkout-discount").textContent = "-$" + (discountAmount / 100).toFixed(2);
+        }
+
+        var total = cart.total ?? subtotal - discountAmount;
+        document.getElementById("checkout-total").textContent = "$" + (total / 100).toFixed(2);
+      })
+      .catch(function () {});
+  }
+
+  // Checkout form submission
+  document.getElementById("checkout-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var btn = document.getElementById("checkout-submit");
+    var errorEl = document.getElementById("checkout-error");
+
+    btn.disabled = true;
+    btn.textContent = "Processing...";
+    errorEl.classList.add("hidden");
+
+    var form = e.target;
+    var fd = new FormData(form);
+    var sid = getSessionId();
+
+    fetch("/_emdash/api/plugins/commerce/storefront/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: sid,
+        customerEmail: fd.get("email"),
+        customerName: fd.get("name"),
+        shippingAddress: {
+          name: fd.get("name"),
+          line1: fd.get("line1"),
+          city: fd.get("city"),
+          state: fd.get("state"),
+          postalCode: fd.get("postalCode"),
+          country: fd.get("country"),
+        },
+      }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        var result = res.data ?? res;
+        if (result.checkoutUrl) {
+          // Clear session before redirect so a fresh cart starts next time
+          localStorage.removeItem(SESSION_KEY);
+          window.location.href = result.checkoutUrl;
+        } else {
+          var msg = result.error?.message || result.error || "Checkout failed. Please try again.";
+          errorEl.textContent = msg;
+          errorEl.classList.remove("hidden");
+          btn.disabled = false;
+          btn.textContent = "Proceed to Payment";
+        }
+      })
+      .catch(function () {
+        errorEl.textContent = "Something went wrong. Please try again.";
+        errorEl.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = "Proceed to Payment";
+      });
+  });
+</script>

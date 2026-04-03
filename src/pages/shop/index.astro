@@ -1,0 +1,193 @@
+---
+/**
+ * Shop page: Product grid with category filters.
+ * All data loaded client-side from the storefront API.
+ */
+import Base from "../../layouts/Base.astro";
+
+export const prerender = false;
+---
+
+<Base title="Shop — Store" description="Browse our full collection of premium products.">
+  <section class="py-12 sm:py-16">
+    <div class="mx-auto max-w-6xl px-6">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">Shop</h1>
+          <p class="mt-2 text-muted-foreground">Browse our full collection.</p>
+        </div>
+      </div>
+
+      <!-- Category tabs -->
+      <div id="category-tabs" class="mt-8 flex flex-wrap gap-2">
+        <button
+          data-category=""
+          class="category-tab rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors"
+        >
+          All
+        </button>
+      </div>
+
+      <!-- Product grid -->
+      <div id="product-grid" class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <!-- Loading skeletons -->
+        <div class="animate-pulse">
+          <div class="aspect-square rounded-lg bg-secondary"></div>
+          <div class="mt-3 h-4 w-3/4 rounded bg-secondary"></div>
+          <div class="mt-2 h-4 w-1/4 rounded bg-secondary"></div>
+        </div>
+        <div class="animate-pulse">
+          <div class="aspect-square rounded-lg bg-secondary"></div>
+          <div class="mt-3 h-4 w-3/4 rounded bg-secondary"></div>
+          <div class="mt-2 h-4 w-1/4 rounded bg-secondary"></div>
+        </div>
+        <div class="animate-pulse hidden sm:block">
+          <div class="aspect-square rounded-lg bg-secondary"></div>
+          <div class="mt-3 h-4 w-3/4 rounded bg-secondary"></div>
+          <div class="mt-2 h-4 w-1/4 rounded bg-secondary"></div>
+        </div>
+        <div class="animate-pulse hidden lg:block">
+          <div class="aspect-square rounded-lg bg-secondary"></div>
+          <div class="mt-3 h-4 w-3/4 rounded bg-secondary"></div>
+          <div class="mt-2 h-4 w-1/4 rounded bg-secondary"></div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="hidden py-20 text-center">
+        <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-foreground">No products found</h3>
+        <p class="mt-2 text-sm text-muted-foreground">Check back soon for new additions.</p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script is:inline>
+  var SESSION_KEY = "store_cart_session";
+  function getSessionId() {
+    var id = localStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  }
+
+  var currentCategory = "";
+
+  // Load categories
+  fetch("/_emdash/api/plugins/commerce/storefront/categories", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      var result = res.data ?? res;
+      var categories = result.categories ?? result.items ?? [];
+      if (categories.length === 0) return;
+
+      var tabsContainer = document.getElementById("category-tabs");
+      if (!tabsContainer) return;
+
+      categories.forEach(function (cat) {
+        var btn = document.createElement("button");
+        btn.dataset.category = cat.slug || cat.name || cat.id;
+        btn.className = "category-tab rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent";
+        btn.textContent = cat.name || cat.slug;
+        tabsContainer.appendChild(btn);
+      });
+
+      // Attach click handlers
+      tabsContainer.addEventListener("click", function (e) {
+        var btn = e.target.closest(".category-tab");
+        if (!btn) return;
+        var cat = btn.dataset.category || "";
+        currentCategory = cat;
+
+        // Update active styles
+        tabsContainer.querySelectorAll(".category-tab").forEach(function (b) {
+          if (b === btn) {
+            b.className = "category-tab rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors";
+          } else {
+            b.className = "category-tab rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent";
+          }
+        });
+
+        loadProducts(cat);
+      });
+    })
+    .catch(function () {});
+
+  // Load products
+  function loadProducts(category) {
+    var grid = document.getElementById("product-grid");
+    var emptyState = document.getElementById("empty-state");
+    if (!grid) return;
+
+    grid.innerHTML =
+      '<div class="animate-pulse"><div class="aspect-square rounded-lg bg-secondary"></div><div class="mt-3 h-4 w-3/4 rounded bg-secondary"></div><div class="mt-2 h-4 w-1/4 rounded bg-secondary"></div></div>' +
+      '<div class="animate-pulse"><div class="aspect-square rounded-lg bg-secondary"></div><div class="mt-3 h-4 w-3/4 rounded bg-secondary"></div><div class="mt-2 h-4 w-1/4 rounded bg-secondary"></div></div>';
+    if (emptyState) emptyState.classList.add("hidden");
+
+    var body = { limit: 20 };
+    if (category) body.category = category;
+
+    fetch("/_emdash/api/plugins/commerce/storefront/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        var result = res.data ?? res;
+        var products = result.items ?? result.products ?? [];
+        if (products.length === 0) {
+          grid.innerHTML = "";
+          if (emptyState) emptyState.classList.remove("hidden");
+          return;
+        }
+
+        grid.innerHTML = products
+          .map(function (p) {
+            var imgSrc = "";
+            if (p.images && p.images.length > 0) {
+              var img = p.images[0];
+              imgSrc = typeof img === "string" ? img : img.src || "/_emdash/api/media/file/" + img.id;
+            }
+            var priceStr = "$" + ((p.price || 0) / 100).toFixed(2);
+            var compareStr = p.compareAtPrice
+              ? '<span class="ml-2 text-muted-foreground line-through">$' + (p.compareAtPrice / 100).toFixed(2) + "</span>"
+              : "";
+            var badge = "";
+            if (p.compareAtPrice && p.compareAtPrice > p.price) {
+              var pct = Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100);
+              badge = '<span class="absolute top-2 left-2 rounded-md bg-foreground px-2 py-0.5 text-xs font-medium text-background">' + pct + "% off</span>";
+            }
+            return (
+              '<a href="/product/' + p.slug + '" class="group block">' +
+              '<div class="relative aspect-square overflow-hidden rounded-lg border border-border bg-secondary">' +
+              badge +
+              (imgSrc
+                ? '<img src="' + imgSrc + '" alt="' + (p.name || "").replace(/"/g, "&quot;") + '" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />'
+                : '<div class="flex h-full items-center justify-center text-muted-foreground"><svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>') +
+              "</div>" +
+              '<div class="mt-3">' +
+              '<h3 class="text-sm font-medium text-foreground transition-colors group-hover:text-muted-foreground">' + (p.name || "Product") + "</h3>" +
+              '<p class="mt-1 text-sm font-semibold text-foreground">' + priceStr + compareStr + "</p>" +
+              "</div>" +
+              "</a>"
+            );
+          })
+          .join("");
+      })
+      .catch(function () {
+        grid.innerHTML = '<p class="col-span-full text-sm text-muted-foreground">Failed to load products. Please try again.</p>';
+      });
+  }
+
+  loadProducts("");
+</script>

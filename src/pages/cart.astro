@@ -1,0 +1,268 @@
+---
+/**
+ * Full cart page with quantity adjusters, discount code input, and checkout link.
+ * All data loaded client-side.
+ */
+import Base from "../layouts/Base.astro";
+
+export const prerender = false;
+---
+
+<Base title="Cart — Store" description="Review your shopping cart.">
+  <section class="py-12 sm:py-16">
+    <div class="mx-auto max-w-4xl px-6">
+      <h1 class="text-3xl font-bold tracking-tight text-foreground">Shopping Cart</h1>
+
+      <!-- Loading -->
+      <div id="cart-loading" class="mt-8 space-y-4">
+        <div class="flex gap-4 animate-pulse">
+          <div class="h-24 w-24 rounded-md bg-secondary"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-4 w-1/2 rounded bg-secondary"></div>
+            <div class="h-4 w-1/4 rounded bg-secondary"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="cart-empty" class="hidden py-20 text-center">
+        <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-foreground">Your cart is empty</h3>
+        <p class="mt-2 text-sm text-muted-foreground">Add some products to get started.</p>
+        <a href="/shop" class="mt-6 inline-flex rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          Continue Shopping
+        </a>
+      </div>
+
+      <!-- Cart content -->
+      <div id="cart-content" class="hidden">
+        <div class="mt-8">
+          <!-- Cart items -->
+          <div id="cart-items" class="divide-y divide-border border-t border-b border-border"></div>
+
+          <!-- Discount code -->
+          <div class="mt-6 rounded-lg border border-border bg-card p-4">
+            <label class="text-sm font-medium text-foreground">Discount Code</label>
+            <div class="mt-2 flex gap-3">
+              <input
+                id="discount-input"
+                type="text"
+                placeholder="Enter code"
+                class="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <button
+                id="discount-apply"
+                class="rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent"
+              >
+                Apply
+              </button>
+            </div>
+            <p id="discount-message" class="mt-2 hidden text-sm"></p>
+          </div>
+
+          <!-- Order summary -->
+          <div class="mt-6 rounded-lg border border-border bg-card p-6">
+            <h2 class="text-lg font-semibold text-foreground">Order Summary</h2>
+            <div class="mt-4 space-y-3">
+              <div class="flex justify-between text-sm">
+                <span class="text-muted-foreground">Subtotal</span>
+                <span id="cart-subtotal" class="text-foreground font-medium">$0.00</span>
+              </div>
+              <div id="cart-discount-row" class="hidden flex justify-between text-sm">
+                <span class="text-muted-foreground">Discount</span>
+                <span id="cart-discount" class="text-foreground font-medium">-$0.00</span>
+              </div>
+              <div class="border-t border-border pt-3 flex justify-between">
+                <span class="text-base font-semibold text-foreground">Total</span>
+                <span id="cart-total" class="text-base font-semibold text-foreground">$0.00</span>
+              </div>
+            </div>
+            <a
+              href="/checkout"
+              class="mt-6 block w-full rounded-md bg-primary py-3 text-center text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+            >
+              Proceed to Checkout
+            </a>
+            <a
+              href="/shop"
+              class="mt-3 block w-full text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Continue Shopping
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script is:inline>
+  var SESSION_KEY = "store_cart_session";
+  function getSessionId() {
+    var id = localStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  }
+
+  function loadCart() {
+    var sessionId = localStorage.getItem(SESSION_KEY);
+    var loadingEl = document.getElementById("cart-loading");
+    var emptyEl = document.getElementById("cart-empty");
+    var contentEl = document.getElementById("cart-content");
+
+    if (!sessionId) {
+      if (loadingEl) loadingEl.classList.add("hidden");
+      if (emptyEl) emptyEl.classList.remove("hidden");
+      return;
+    }
+
+    fetch("/_emdash/api/plugins/commerce/storefront/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: sessionId }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        var cart = res.data ?? res;
+        var items = cart.items ?? [];
+        if (loadingEl) loadingEl.classList.add("hidden");
+
+        if (items.length === 0) {
+          if (emptyEl) emptyEl.classList.remove("hidden");
+          if (contentEl) contentEl.classList.add("hidden");
+          return;
+        }
+
+        if (emptyEl) emptyEl.classList.add("hidden");
+        if (contentEl) contentEl.classList.remove("hidden");
+
+        renderCartItems(items);
+        updateTotals(cart);
+      })
+      .catch(function () {
+        if (loadingEl) loadingEl.classList.add("hidden");
+        if (emptyEl) emptyEl.classList.remove("hidden");
+      });
+  }
+
+  function renderCartItems(items) {
+    var container = document.getElementById("cart-items");
+    if (!container) return;
+
+    container.innerHTML = items
+      .map(function (item) {
+        var imgSrc = "";
+        if (item.image) {
+          imgSrc = typeof item.image === "string" ? item.image : item.image.src || "/_emdash/api/media/file/" + item.image.id;
+        }
+        var lineTotal = ((item.price || 0) * (item.quantity || 1)) / 100;
+        return (
+          '<div class="flex gap-4 py-4">' +
+          '<div class="h-20 w-20 shrink-0 overflow-hidden rounded-md border border-border bg-secondary">' +
+          (imgSrc
+            ? '<img src="' + imgSrc + '" alt="' + (item.name || "").replace(/"/g, "&quot;") + '" class="h-full w-full object-cover" />'
+            : '<div class="flex h-full items-center justify-center text-muted-foreground"><svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>') +
+          "</div>" +
+          '<div class="flex flex-1 flex-col justify-between sm:flex-row sm:items-center">' +
+          "<div>" +
+          '<h3 class="text-sm font-medium text-foreground">' + (item.name || "Product") + "</h3>" +
+          '<p class="mt-1 text-sm text-muted-foreground">$' + ((item.price || 0) / 100).toFixed(2) + " each</p>" +
+          (item.variantName ? '<p class="text-xs text-muted-foreground">' + item.variantName + "</p>" : "") +
+          "</div>" +
+          '<div class="mt-2 flex items-center gap-3 sm:mt-0">' +
+          '<div class="flex items-center gap-2">' +
+          '<button onclick="updateQty(\'' + item.productId + "', '" + (item.variantId || "") + "', " + ((item.quantity || 1) - 1) + ')" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-foreground hover:bg-accent text-sm">&minus;</button>' +
+          '<span class="w-6 text-center text-sm text-foreground">' + (item.quantity || 1) + "</span>" +
+          '<button onclick="updateQty(\'' + item.productId + "', '" + (item.variantId || "") + "', " + ((item.quantity || 1) + 1) + ')" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-foreground hover:bg-accent text-sm">+</button>' +
+          "</div>" +
+          '<span class="w-20 text-right text-sm font-medium text-foreground">$' + lineTotal.toFixed(2) + "</span>" +
+          '<button onclick="updateQty(\'' + item.productId + "', '" + (item.variantId || "") + "', 0)\" class=\"ml-2 text-muted-foreground hover:text-foreground transition-colors\" aria-label=\"Remove\">" +
+          '<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>' +
+          "</button>" +
+          "</div></div></div>"
+        );
+      })
+      .join("");
+  }
+
+  function updateTotals(cart) {
+    var items = cart.items ?? [];
+    var subtotal = items.reduce(function (sum, i) {
+      return sum + (i.price || 0) * (i.quantity || 1);
+    }, 0);
+
+    document.getElementById("cart-subtotal").textContent = "$" + (subtotal / 100).toFixed(2);
+
+    var discountAmount = cart.discountAmount || 0;
+    var discountRow = document.getElementById("cart-discount-row");
+    if (discountAmount > 0 && discountRow) {
+      discountRow.classList.remove("hidden");
+      document.getElementById("cart-discount").textContent = "-$" + (discountAmount / 100).toFixed(2);
+    }
+
+    var total = cart.total ?? subtotal - discountAmount;
+    document.getElementById("cart-total").textContent = "$" + (total / 100).toFixed(2);
+  }
+
+  window.updateQty = function (productId, variantId, newQty) {
+    var sessionId = getSessionId();
+    var body = {
+      sessionId: sessionId,
+      productId: productId,
+      quantity: Math.max(0, newQty),
+    };
+    if (variantId) body.variantId = variantId;
+
+    fetch("/_emdash/api/plugins/commerce/storefront/cart/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+      .then(function () {
+        loadCart();
+        window.dispatchEvent(new Event("cart-updated"));
+      })
+      .catch(function () {});
+  };
+
+  // Discount code
+  document.getElementById("discount-apply").addEventListener("click", function () {
+    var input = document.getElementById("discount-input");
+    var msg = document.getElementById("discount-message");
+    var code = input.value.trim();
+    if (!code) return;
+
+    var sessionId = getSessionId();
+    fetch("/_emdash/api/plugins/commerce/storefront/cart/discount", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: sessionId, code: code }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        var result = res.data ?? res;
+        if (result.error) {
+          msg.textContent = result.error.message || result.error || "Invalid code.";
+          msg.className = "mt-2 text-sm text-destructive";
+          msg.classList.remove("hidden");
+        } else {
+          msg.textContent = "Discount applied!";
+          msg.className = "mt-2 text-sm text-foreground";
+          msg.classList.remove("hidden");
+          loadCart();
+        }
+      })
+      .catch(function () {
+        msg.textContent = "Failed to apply code.";
+        msg.className = "mt-2 text-sm text-destructive";
+        msg.classList.remove("hidden");
+      });
+  });
+
+  loadCart();
+</script>

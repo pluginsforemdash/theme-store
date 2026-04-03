@@ -1,0 +1,143 @@
+---
+/**
+ * Single blog post page. Loaded server-side via EmDash.
+ */
+import Base from "../../layouts/Base.astro";
+import { getEmDashEntry } from "emdash";
+import { PortableText, EmDashImage } from "emdash/ui";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+const { entry: post, cacheHint } = await getEmDashEntry("posts", slug!);
+if (cacheHint) Astro.cache.set(cacheHint);
+
+if (!post) {
+  return Astro.redirect("/404");
+}
+
+const imageSrc = post.data.featured_image?.src || null;
+---
+
+<Base
+  title={`${post.data.title} — Store`}
+  description={post.data.excerpt || ""}
+  image={imageSrc}
+  kind="content"
+  pageType="article"
+  content={{ collection: "posts", id: post.id, slug: post.data.slug }}
+>
+  <article class="py-12 sm:py-16">
+    <div class="mx-auto max-w-3xl px-6">
+      <!-- Back link -->
+      <nav class="mb-8">
+        <a href="/posts" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+          &larr; Back to Journal
+        </a>
+      </nav>
+
+      <!-- Title -->
+      <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+        {post.data.title}
+      </h1>
+
+      {post.data.excerpt && (
+        <p class="mt-4 text-lg text-muted-foreground">{post.data.excerpt}</p>
+      )}
+
+      <!-- Featured image -->
+      {post.data.featured_image && (
+        <div class="mt-8 aspect-[16/9] overflow-hidden rounded-lg border border-border bg-secondary">
+          <EmDashImage
+            image={post.data.featured_image}
+            class="h-full w-full object-cover"
+            priority
+          />
+        </div>
+      )}
+
+      <!-- Content -->
+      {post.data.content && (
+        <div class="prose-store mt-10">
+          <PortableText value={post.data.content} />
+        </div>
+      )}
+
+      <!-- Separator -->
+      <div class="mt-16 border-t border-border pt-8">
+        <a href="/posts" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
+          &larr; Back to Journal
+        </a>
+      </div>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .prose-store :global(h1),
+  .prose-store :global(h2),
+  .prose-store :global(h3),
+  .prose-store :global(h4) {
+    color: var(--color-foreground);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+  .prose-store :global(h2) {
+    font-size: 1.5rem;
+  }
+  .prose-store :global(h3) {
+    font-size: 1.25rem;
+  }
+  .prose-store :global(p) {
+    color: var(--color-muted-foreground);
+    line-height: 1.75;
+    margin-bottom: 1.25rem;
+  }
+  .prose-store :global(a) {
+    color: var(--color-foreground);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .prose-store :global(a:hover) {
+    color: var(--color-muted-foreground);
+  }
+  .prose-store :global(ul),
+  .prose-store :global(ol) {
+    color: var(--color-muted-foreground);
+    padding-left: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .prose-store :global(li) {
+    margin-bottom: 0.5rem;
+  }
+  .prose-store :global(blockquote) {
+    border-left: 3px solid var(--color-border);
+    padding-left: 1rem;
+    color: var(--color-muted-foreground);
+    font-style: italic;
+    margin: 1.5rem 0;
+  }
+  .prose-store :global(pre) {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+  }
+  .prose-store :global(code) {
+    color: var(--color-foreground);
+    font-size: 0.875rem;
+  }
+  .prose-store :global(img) {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    margin: 1.5rem 0;
+  }
+  .prose-store :global(hr) {
+    border-color: var(--color-border);
+    margin: 2rem 0;
+  }
+</style>
