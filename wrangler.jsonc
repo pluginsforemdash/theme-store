@@ -1,0 +1,28 @@
+{
+	"name": "theme-store",
+	"compatibility_date": "2025-04-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "theme-store-db",
+			"database_id": "<YOUR_D1_DATABASE_ID>"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "MEDIA",
+			"bucket_name": "theme-store-media"
+		}
+	],
+	"observability": {
+		"enabled": false,
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		}
+	},
+	"vars": {
+		"SITE_URL": "https://demo.pluginsforemdash.com"
+	}
+}
