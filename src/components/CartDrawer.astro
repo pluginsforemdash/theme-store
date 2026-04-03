@@ -1,137 +1,85 @@
 ---
-/**
- * Cart sidebar / drawer component.
- *
- * This is a slide-out panel triggered by the cart icon.
- * Cart data is loaded client-side from the storefront API.
- */
 ---
 
-<div id="cart-drawer-overlay" class="fixed inset-0 z-50 hidden bg-background/80 backdrop-blur-sm"></div>
+<div class="drawer drawer-end z-50" id="cart-drawer-root">
+  <input id="cart-drawer-toggle" type="checkbox" class="drawer-toggle" />
+  <div class="drawer-side">
+    <label for="cart-drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
+    <div class="bg-base-100 min-h-full w-80 p-4 flex flex-col">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold">Shopping Cart</h2>
+        <label for="cart-drawer-toggle" class="btn btn-sm btn-ghost btn-circle">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </label>
+      </div>
 
-<aside
-  id="cart-drawer"
-  class="fixed top-0 right-0 z-50 flex h-full w-full max-w-md translate-x-full flex-col border-l border-border bg-background shadow-xl transition-transform duration-300"
->
-  <!-- Header -->
-  <div class="flex items-center justify-between border-b border-border px-6 py-4">
-    <h2 class="text-lg font-semibold tracking-tight text-foreground">Shopping Cart</h2>
-    <button
-      id="cart-drawer-close"
-      class="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-      aria-label="Close cart"
-    >
-      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-  </div>
+      <div id="cart-drawer-items" class="flex-1 overflow-y-auto">
+        <p class="text-sm opacity-60">Your cart is empty.</p>
+      </div>
 
-  <!-- Cart items -->
-  <div id="cart-drawer-items" class="flex-1 overflow-y-auto px-6 py-4">
-    <p class="text-sm text-muted-foreground">Your cart is empty.</p>
-  </div>
-
-  <!-- Footer -->
-  <div id="cart-drawer-footer" class="hidden border-t border-border px-6 py-4">
-    <div class="flex items-center justify-between mb-4">
-      <span class="text-sm font-medium text-muted-foreground">Subtotal</span>
-      <span id="cart-drawer-subtotal" class="text-lg font-semibold text-foreground">$0.00</span>
+      <div id="cart-drawer-footer" class="hidden border-t border-base-300 pt-4 mt-4 space-y-2">
+        <div class="flex justify-between font-semibold">
+          <span>Subtotal</span>
+          <span id="cart-drawer-subtotal">$0.00</span>
+        </div>
+        <a href="/cart" class="btn btn-outline btn-block btn-sm">View Cart</a>
+        <a href="/checkout" class="btn btn-primary btn-block btn-sm">Checkout</a>
+      </div>
     </div>
-    <a
-      href="/cart"
-      class="block w-full rounded-md border border-border bg-secondary py-2.5 text-center text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent"
-    >
-      View Cart
-    </a>
-    <a
-      href="/checkout"
-      class="mt-2 block w-full rounded-md bg-primary py-2.5 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-    >
-      Checkout
-    </a>
   </div>
-</aside>
+</div>
 
 <script is:inline>
-  (function () {
-    const overlay = document.getElementById("cart-drawer-overlay");
-    const drawer = document.getElementById("cart-drawer");
-    const closeBtn = document.getElementById("cart-drawer-close");
+  window.openCartDrawer = function() {
+    const toggle = document.getElementById("cart-drawer-toggle");
+    if (toggle) toggle.checked = true;
+    loadDrawerCart();
+  };
 
-    function openDrawer() {
-      if (!overlay || !drawer) return;
-      overlay.classList.remove("hidden");
-      requestAnimationFrame(() => {
-        drawer.classList.remove("translate-x-full");
-      });
-      document.body.style.overflow = "hidden";
-      loadDrawerCart();
-    }
+  function loadDrawerCart() {
+    const sessionId = localStorage.getItem("store_cart_session");
+    const container = document.getElementById("cart-drawer-items");
+    const footer = document.getElementById("cart-drawer-footer");
+    if (!sessionId || !container) return;
 
-    function closeDrawer() {
-      if (!overlay || !drawer) return;
-      drawer.classList.add("translate-x-full");
-      overlay.classList.add("hidden");
-      document.body.style.overflow = "";
-    }
+    fetch("/_emdash/api/plugins/commerce/storefront/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    })
+      .then(r => r.json())
+      .then(res => {
+        const cart = res.data ?? res;
+        const items = cart.items ?? [];
 
-    if (overlay) overlay.addEventListener("click", closeDrawer);
-    if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+        if (items.length === 0) {
+          container.innerHTML = '<p class="text-sm opacity-60">Your cart is empty.</p>';
+          if (footer) footer.classList.add("hidden");
+          return;
+        }
 
-    window.openCartDrawer = openDrawer;
-    window.closeCartDrawer = closeDrawer;
-
-    function loadDrawerCart() {
-      const sessionId = localStorage.getItem("store_cart_session");
-      const itemsContainer = document.getElementById("cart-drawer-items");
-      const footer = document.getElementById("cart-drawer-footer");
-      if (!sessionId || !itemsContainer) return;
-
-      fetch("/_emdash/api/plugins/commerce/storefront/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
-      })
-        .then((r) => r.json())
-        .then((res) => {
-          const cart = res.data ?? res;
-          const items = cart.items ?? [];
-
-          if (items.length === 0) {
-            itemsContainer.innerHTML = '<p class="text-sm text-muted-foreground">Your cart is empty.</p>';
-            if (footer) footer.classList.add("hidden");
-            return;
-          }
-
-          itemsContainer.innerHTML = items
-            .map(
-              (item) => `
-            <div class="flex gap-4 py-3 border-b border-border last:border-0">
-              <div class="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-border bg-secondary">
-                ${
-                  item.image
-                    ? '<img src="' + (typeof item.image === "string" ? item.image : item.image.src || "/_emdash/api/media/file/" + item.image.id) + '" alt="' + (item.name || "") + '" class="h-full w-full object-cover" />'
-                    : '<div class="flex h-full items-center justify-center text-muted-foreground"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>'
-                }
-              </div>
-              <div class="flex flex-1 flex-col justify-center">
-                <p class="text-sm font-medium text-foreground">${item.name || "Product"}</p>
-                <p class="text-sm text-muted-foreground">${item.quantity} x $${((item.price || 0) / 100).toFixed(2)}</p>
+        container.innerHTML = items.map(item => `
+          <div class="flex gap-3 py-2 border-b border-base-200">
+            <div class="avatar">
+              <div class="w-12 rounded">
+                ${item.image
+                  ? '<img src="' + (typeof item.image === "string" ? item.image : "/_emdash/api/media/file/" + item.image.id) + '" alt="" />'
+                  : '<div class="bg-base-200 w-full h-full flex items-center justify-center text-xs opacity-40">No img</div>'}
               </div>
             </div>
-          `
-            )
-            .join("");
+            <div class="flex-1">
+              <p class="text-sm font-medium">${item.name}</p>
+              <p class="text-xs opacity-60">${item.quantity} x $${((item.price || 0) / 100).toFixed(2)}</p>
+            </div>
+          </div>
+        `).join("");
 
-          const subtotal = items.reduce((sum, i) => sum + (i.price || 0) * (i.quantity || 1), 0);
-          const subtotalEl = document.getElementById("cart-drawer-subtotal");
-          if (subtotalEl) subtotalEl.textContent = "$" + (subtotal / 100).toFixed(2);
-          if (footer) footer.classList.remove("hidden");
-        })
-        .catch(() => {
-          itemsContainer.innerHTML = '<p class="text-sm text-muted-foreground">Failed to load cart.</p>';
-        });
-    }
-  })();
+        const subtotal = items.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0);
+        document.getElementById("cart-drawer-subtotal").textContent = "$" + (subtotal / 100).toFixed(2);
+        if (footer) footer.classList.remove("hidden");
+      })
+      .catch(() => {});
+  }
 </script>

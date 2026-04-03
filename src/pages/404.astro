@@ -1,34 +1,19 @@
 ---
-/**
- * 404 Not Found page.
- */
 import Base from "../layouts/Base.astro";
-
 export const prerender = false;
 ---
 
-<Base title="Page Not Found — Store" description="The page you're looking for doesn't exist.">
-  <section class="flex flex-1 items-center justify-center py-20">
-    <div class="mx-auto max-w-md px-6 text-center">
-      <p class="text-7xl font-bold text-muted-foreground/30">404</p>
-      <h1 class="mt-4 text-2xl font-bold tracking-tight text-foreground">Page not found</h1>
-      <p class="mt-3 text-muted-foreground">
-        The page you're looking for doesn't exist or has been moved.
-      </p>
-      <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <a
-          href="/"
-          class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
-        >
-          Go Home
-        </a>
-        <a
-          href="/shop"
-          class="inline-flex items-center justify-center rounded-md border border-border bg-background px-6 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          Browse Shop
-        </a>
+<Base title="Not Found">
+  <div class="hero min-h-[50vh]">
+    <div class="hero-content text-center">
+      <div>
+        <h1 class="text-6xl font-bold">404</h1>
+        <p class="py-6 text-lg opacity-60">Page not found</p>
+        <div class="flex justify-center gap-4">
+          <a href="/" class="btn btn-primary">Home</a>
+          <a href="/shop" class="btn btn-ghost">Shop</a>
+        </div>
       </div>
     </div>
-  </section>
+  </div>
 </Base>

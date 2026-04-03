@@ -17,6 +17,7 @@
     "@tailwindcss/vite": "^4.2.0",
     "astro": "^6.1.0",
     "better-sqlite3": "^12.0.0",
+    "daisyui": "^5.5.19",
     "emdash": "^0.1.0",
     "emdash-plugin-commerce": "https://github.com/pluginsforemdash/commerce/archive/refs/heads/main.tar.gz",
     "react": "^19.0.0",

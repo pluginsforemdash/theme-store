@@ -1,317 +1,193 @@
 ---
-/**
- * Product detail page.
- * Product data is loaded client-side by slug from the URL.
- */
 import Base from "../../layouts/Base.astro";
-
 export const prerender = false;
-
 const { slug } = Astro.params;
 ---
 
-<Base title="Product — Store" description="View product details.">
-  <div class="mx-auto max-w-6xl px-6 py-12 sm:py-16">
-    <!-- Loading state -->
-    <div id="product-loading" class="grid gap-8 lg:grid-cols-2">
-      <div class="aspect-square animate-pulse rounded-lg bg-secondary"></div>
-      <div class="space-y-4">
-        <div class="h-8 w-3/4 animate-pulse rounded bg-secondary"></div>
-        <div class="h-6 w-1/4 animate-pulse rounded bg-secondary"></div>
-        <div class="h-4 w-full animate-pulse rounded bg-secondary"></div>
-        <div class="h-4 w-5/6 animate-pulse rounded bg-secondary"></div>
-        <div class="h-4 w-4/6 animate-pulse rounded bg-secondary"></div>
-        <div class="mt-8 h-12 w-full animate-pulse rounded-md bg-secondary"></div>
-      </div>
+<Base title="Product" description="">
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <div class="breadcrumbs text-sm mb-6">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li class="opacity-60" id="breadcrumb-name">Loading...</li>
+      </ul>
     </div>
 
-    <!-- Product content (hidden until loaded) -->
+    <div id="product-loading" class="text-center py-20"><span class="loading loading-spinner loading-lg"></span></div>
+
     <div id="product-content" class="hidden">
-      <div class="grid gap-8 lg:grid-cols-2 lg:gap-12">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <!-- Image -->
-        <div class="aspect-square overflow-hidden rounded-lg border border-border bg-secondary">
-          <img id="product-image" src="" alt="" class="h-full w-full object-cover" />
-          <div id="product-no-image" class="hidden h-full w-full flex items-center justify-center text-muted-foreground">
-            <svg class="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="0.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+        <div>
+          <div id="product-image" class="bg-base-200 rounded-box overflow-hidden aspect-square flex items-center justify-center">
+            <span class="opacity-30">No image</span>
           </div>
         </div>
 
         <!-- Details -->
         <div>
-          <nav class="mb-4 text-sm text-muted-foreground">
-            <a href="/shop" class="hover:text-foreground transition-colors">Shop</a>
-            <span class="mx-2">/</span>
-            <span id="product-breadcrumb" class="text-foreground"></span>
-          </nav>
+          <h1 id="product-name" class="text-3xl font-bold mb-2"></h1>
+          <div id="product-price" class="text-2xl font-bold mb-4"></div>
+          <div id="product-stock" class="mb-4"></div>
+          <p id="product-description" class="opacity-70 mb-6"></p>
 
-          <h1 id="product-name" class="text-3xl font-bold tracking-tight text-foreground"></h1>
-
-          <div class="mt-4 flex items-baseline gap-3">
-            <span id="product-price" class="text-2xl font-bold text-foreground"></span>
-            <span id="product-compare-price" class="hidden text-lg text-muted-foreground line-through"></span>
-            <span id="product-badge" class="hidden rounded-md bg-foreground px-2 py-0.5 text-xs font-medium text-background"></span>
-          </div>
-
-          <p id="product-description" class="mt-6 text-muted-foreground leading-relaxed"></p>
-
-          <!-- Variant selector -->
-          <div id="variant-selector" class="mt-6 hidden">
-            <label class="text-sm font-medium text-foreground">Variant</label>
-            <select
-              id="variant-select"
-              class="mt-2 block w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
-            ></select>
+          <!-- Variants -->
+          <div id="product-variants" class="hidden mb-6">
+            <label class="label"><span class="label-text font-semibold">Options</span></label>
+            <select id="variant-select" class="select select-bordered w-full max-w-xs"></select>
           </div>
 
           <!-- Quantity -->
-          <div class="mt-6">
-            <label class="text-sm font-medium text-foreground">Quantity</label>
-            <div class="mt-2 flex items-center gap-3">
-              <button
-                id="qty-minus"
-                class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-accent"
-              >
-                &minus;
-              </button>
-              <span id="qty-value" class="w-8 text-center text-sm font-medium text-foreground">1</span>
-              <button
-                id="qty-plus"
-                class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-accent"
-              >
-                +
-              </button>
+          <div class="mb-6">
+            <label class="label"><span class="label-text font-semibold">Quantity</span></label>
+            <div class="join">
+              <button id="qty-minus" class="btn btn-sm join-item">-</button>
+              <input id="qty-input" type="number" value="1" min="1" max="99" class="input input-sm input-bordered join-item w-16 text-center" />
+              <button id="qty-plus" class="btn btn-sm join-item">+</button>
             </div>
           </div>
 
           <!-- Add to cart -->
-          <button
-            id="add-to-cart"
-            class="mt-8 w-full rounded-md bg-primary py-3 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-          >
-            Add to Cart
-          </button>
-
-          <div id="add-to-cart-success" class="mt-3 hidden rounded-md border border-border bg-card p-3 text-sm text-foreground">
-            Added to cart!
-            <a href="/cart" class="ml-1 font-medium underline underline-offset-4 hover:text-muted-foreground">View cart &rarr;</a>
-          </div>
-
-          <div id="add-to-cart-error" class="mt-3 hidden rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-foreground"></div>
+          <button id="add-to-cart" class="btn btn-primary btn-lg w-full sm:w-auto">Add to Cart</button>
+          <div id="add-feedback" class="mt-2 hidden"></div>
         </div>
       </div>
 
-      <!-- Related products -->
-      <div class="mt-16 border-t border-border pt-16">
-        <h2 class="text-2xl font-bold tracking-tight text-foreground">You may also like</h2>
-        <div id="related-products" class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"></div>
+      <!-- Related -->
+      <div id="related-section" class="hidden mt-16">
+        <h2 class="text-2xl font-bold mb-6">You may also like</h2>
+        <div id="related-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-6"></div>
       </div>
     </div>
 
-    <!-- Not found -->
-    <div id="product-not-found" class="hidden py-20 text-center">
-      <h2 class="text-2xl font-bold text-foreground">Product not found</h2>
-      <p class="mt-2 text-muted-foreground">The product you're looking for doesn't exist.</p>
-      <a href="/shop" class="mt-6 inline-flex rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-        Back to Shop
-      </a>
+    <div id="product-error" class="hidden text-center py-20">
+      <h2 class="text-2xl font-bold mb-2">Product not found</h2>
+      <a href="/shop" class="btn btn-primary mt-4">Back to Shop</a>
     </div>
   </div>
-</Base>
 
-<script is:inline define:vars={{ slug }}>
-  var SESSION_KEY = "store_cart_session";
-  function getSessionId() {
-    var id = localStorage.getItem(SESSION_KEY);
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem(SESSION_KEY, id);
+  <script is:inline define:vars={{ slug }}>
+    const api = (route, body) => fetch(`/_emdash/api/plugins/commerce/${route}`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }).then(r => r.json()).then(r => r.data ?? r);
+
+    const SESSION_KEY = "store_cart_session";
+    function getSessionId() {
+      let id = localStorage.getItem(SESSION_KEY);
+      if (!id) { id = crypto.randomUUID(); localStorage.setItem(SESSION_KEY, id); }
+      return id;
     }
-    return id;
-  }
 
-  var productData = null;
-  var selectedVariantId = null;
-  var quantity = 1;
+    let product = null;
+    let selectedVariant = null;
 
-  // Quantity controls
-  document.getElementById("qty-minus").addEventListener("click", function () {
-    if (quantity > 1) {
-      quantity--;
-      document.getElementById("qty-value").textContent = String(quantity);
-    }
-  });
-  document.getElementById("qty-plus").addEventListener("click", function () {
-    quantity++;
-    document.getElementById("qty-value").textContent = String(quantity);
-  });
-
-  // Load product
-  fetch("/_emdash/api/plugins/commerce/storefront/product", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ slug: slug }),
-  })
-    .then(function (r) { return r.json(); })
-    .then(function (res) {
-      var result = res.data ?? res;
-      var product = result.product ?? result;
+    api("storefront/product", { slug }).then(p => {
+      product = p;
       document.getElementById("product-loading").classList.add("hidden");
+      document.getElementById("product-content").classList.remove("hidden");
+      document.getElementById("breadcrumb-name").textContent = p.name;
+      document.title = p.name + " — Store";
+      document.getElementById("product-name").textContent = p.name;
+      document.getElementById("product-description").textContent = p.description || p.shortDescription || "";
 
-      if (!product || !product.id) {
-        document.getElementById("product-not-found").classList.remove("hidden");
-        return;
-      }
-
-      productData = product;
-
-      // Set image
-      var imgEl = document.getElementById("product-image");
-      var noImgEl = document.getElementById("product-no-image");
-      if (product.images && product.images.length > 0) {
-        var img = product.images[0];
-        var imgSrc = typeof img === "string" ? img : img.src || "/_emdash/api/media/file/" + img.id;
-        imgEl.src = imgSrc;
-        imgEl.alt = product.name || "";
+      // Price
+      const priceEl = document.getElementById("product-price");
+      if (p.compareAtPrice) {
+        priceEl.innerHTML = `<span class="line-through opacity-40 text-lg mr-2">$${(p.compareAtPrice/100).toFixed(2)}</span> $${(p.price/100).toFixed(2)} <div class="badge badge-secondary ml-2">Sale</div>`;
+      } else if (p.priceRange) {
+        priceEl.textContent = `From $${(p.priceRange.min/100).toFixed(2)}`;
       } else {
-        imgEl.classList.add("hidden");
-        noImgEl.classList.remove("hidden");
+        priceEl.textContent = `$${(p.price/100).toFixed(2)}`;
       }
 
-      // Set details
-      document.getElementById("product-breadcrumb").textContent = product.name;
-      document.getElementById("product-name").textContent = product.name;
-      document.getElementById("product-price").textContent = "$" + ((product.price || 0) / 100).toFixed(2);
+      // Stock
+      const stockEl = document.getElementById("product-stock");
+      if (p.stockStatus === "out_of_stock") stockEl.innerHTML = '<div class="badge badge-error">Out of Stock</div>';
+      else if (p.stockStatus === "low_stock") stockEl.innerHTML = '<div class="badge badge-warning">' + p.stockDisplay + '</div>';
+      else if (p.stockStatus === "on_backorder") stockEl.innerHTML = '<div class="badge badge-info">Available on Backorder</div>';
+      else stockEl.innerHTML = '<div class="badge badge-success">In Stock</div>';
 
-      if (product.compareAtPrice && product.compareAtPrice > product.price) {
-        var compareEl = document.getElementById("product-compare-price");
-        compareEl.textContent = "$" + (product.compareAtPrice / 100).toFixed(2);
-        compareEl.classList.remove("hidden");
-
-        var pct = Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100);
-        var badgeEl = document.getElementById("product-badge");
-        badgeEl.textContent = pct + "% off";
-        badgeEl.classList.remove("hidden");
+      // Image
+      if (p.images?.[0]) {
+        document.getElementById("product-image").innerHTML = `<img src="${p.images[0]}" alt="${p.name}" class="w-full h-full object-cover" />`;
       }
-
-      document.getElementById("product-description").textContent = product.description || product.shortDescription || "";
-
-      // Update page title
-      document.title = (product.name || "Product") + " — Store";
 
       // Variants
-      var variants = product.variants ?? [];
-      if (variants.length > 0) {
-        var selector = document.getElementById("variant-selector");
-        var select = document.getElementById("variant-select");
-        selector.classList.remove("hidden");
-        select.innerHTML = variants
-          .map(function (v) {
-            var label = v.name || v.sku || "Variant";
-            var vPrice = v.price ? " — $" + (v.price / 100).toFixed(2) : "";
-            return '<option value="' + v.id + '">' + label + vPrice + "</option>";
-          })
-          .join("");
-        selectedVariantId = variants[0].id;
-        select.addEventListener("change", function () {
-          selectedVariantId = select.value;
-        });
+      if (p.variants?.length > 0) {
+        const container = document.getElementById("product-variants");
+        const select = document.getElementById("variant-select");
+        container.classList.remove("hidden");
+        select.innerHTML = p.variants.map(v => `<option value="${v.id}">${v.name}${v.price !== undefined ? ` — $${(v.price/100).toFixed(2)}` : ""}</option>`).join("");
+        selectedVariant = p.variants[0].id;
+        select.addEventListener("change", () => { selectedVariant = select.value; });
       }
 
-      document.getElementById("product-content").classList.remove("hidden");
+      // Disable add to cart if out of stock
+      if (p.stockStatus === "out_of_stock" && !p.backordersAllowed) {
+        document.getElementById("add-to-cart").disabled = true;
+        document.getElementById("add-to-cart").textContent = "Out of Stock";
+        document.getElementById("add-to-cart").classList.replace("btn-primary", "btn-disabled");
+      }
 
-      // Load related products
-      loadRelatedProducts();
-    })
-    .catch(function () {
+      // Related products
+      api("storefront/related", { productId: p.id, limit: 4 }).then(rel => {
+        if (rel.items?.length > 0) {
+          document.getElementById("related-section").classList.remove("hidden");
+          document.getElementById("related-grid").innerHTML = rel.items.map(r => `
+            <a href="/product/${r.slug}" class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+              ${r.images?.[0] ? `<figure><img src="${r.images[0]}" alt="${r.name}" class="h-36 w-full object-cover" /></figure>` : ""}
+              <div class="card-body p-3">
+                <h3 class="text-sm font-medium">${r.name}</h3>
+                <span class="font-bold text-sm">$${(r.price/100).toFixed(2)}</span>
+              </div>
+            </a>
+          `).join("");
+        }
+      }).catch(() => {});
+
+    }).catch(() => {
       document.getElementById("product-loading").classList.add("hidden");
-      document.getElementById("product-not-found").classList.remove("hidden");
+      document.getElementById("product-error").classList.remove("hidden");
     });
 
-  // Add to cart
-  document.getElementById("add-to-cart").addEventListener("click", function () {
-    if (!productData) return;
-    var btn = document.getElementById("add-to-cart");
-    var successEl = document.getElementById("add-to-cart-success");
-    var errorEl = document.getElementById("add-to-cart-error");
+    // Quantity
+    document.getElementById("qty-minus")?.addEventListener("click", () => {
+      const input = document.getElementById("qty-input");
+      if (input.value > 1) input.value = Number(input.value) - 1;
+    });
+    document.getElementById("qty-plus")?.addEventListener("click", () => {
+      const input = document.getElementById("qty-input");
+      input.value = Number(input.value) + 1;
+    });
 
-    btn.disabled = true;
-    btn.textContent = "Adding...";
-    successEl.classList.add("hidden");
-    errorEl.classList.add("hidden");
+    // Add to cart
+    document.getElementById("add-to-cart")?.addEventListener("click", async () => {
+      if (!product) return;
+      const btn = document.getElementById("add-to-cart");
+      const feedback = document.getElementById("add-feedback");
+      btn.classList.add("loading");
 
-    var sessionId = getSessionId();
-    var body = {
-      sessionId: sessionId,
-      productId: productData.id,
-      quantity: quantity,
-    };
-    if (selectedVariantId) body.variantId = selectedVariantId;
+      try {
+        const qty = Number(document.getElementById("qty-input").value) || 1;
+        const body = { sessionId: getSessionId(), productId: product.id, quantity: qty };
+        if (selectedVariant) body.variantId = selectedVariant;
+        const result = await api("storefront/cart/add", body);
 
-    fetch("/_emdash/api/plugins/commerce/storefront/cart/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    })
-      .then(function (r) { return r.json(); })
-      .then(function (res) {
-        var result = res.data ?? res;
-        if (result.error) {
-          errorEl.textContent = result.error.message || result.error || "Failed to add to cart.";
-          errorEl.classList.remove("hidden");
-        } else {
-          successEl.classList.remove("hidden");
+        if (result.success) {
+          feedback.innerHTML = '<div class="alert alert-success py-2 text-sm"><span>Added to cart!</span></div>';
+          feedback.classList.remove("hidden");
           window.dispatchEvent(new Event("cart-updated"));
+          setTimeout(() => feedback.classList.add("hidden"), 3000);
+        } else {
+          feedback.innerHTML = `<div class="alert alert-error py-2 text-sm"><span>${result.error || "Failed"}</span></div>`;
+          feedback.classList.remove("hidden");
         }
-        btn.disabled = false;
-        btn.textContent = "Add to Cart";
-      })
-      .catch(function () {
-        errorEl.textContent = "Something went wrong. Please try again.";
-        errorEl.classList.remove("hidden");
-        btn.disabled = false;
-        btn.textContent = "Add to Cart";
-      });
-  });
-
-  function loadRelatedProducts() {
-    fetch("/_emdash/api/plugins/commerce/storefront/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ limit: 4 }),
-    })
-      .then(function (r) { return r.json(); })
-      .then(function (res) {
-        var result = res.data ?? res;
-        var products = (result.items ?? result.products ?? []).filter(function (p) {
-          return p.slug !== slug;
-        }).slice(0, 4);
-        var container = document.getElementById("related-products");
-        if (!container || products.length === 0) return;
-
-        container.innerHTML = products
-          .map(function (p) {
-            var imgSrc = "";
-            if (p.images && p.images.length > 0) {
-              var img = p.images[0];
-              imgSrc = typeof img === "string" ? img : img.src || "/_emdash/api/media/file/" + img.id;
-            }
-            return (
-              '<a href="/product/' + p.slug + '" class="group block">' +
-              '<div class="aspect-square overflow-hidden rounded-lg border border-border bg-secondary">' +
-              (imgSrc
-                ? '<img src="' + imgSrc + '" alt="' + (p.name || "").replace(/"/g, "&quot;") + '" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />'
-                : '<div class="flex h-full items-center justify-center text-muted-foreground"><svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>') +
-              "</div>" +
-              '<div class="mt-3">' +
-              '<h3 class="text-sm font-medium text-foreground transition-colors group-hover:text-muted-foreground">' + (p.name || "Product") + "</h3>" +
-              '<p class="mt-1 text-sm font-semibold text-foreground">$' + ((p.price || 0) / 100).toFixed(2) + "</p>" +
-              "</div></a>"
-            );
-          })
-          .join("");
-      })
-      .catch(function () {});
-  }
-</script>
+      } catch {
+        feedback.innerHTML = '<div class="alert alert-error py-2 text-sm"><span>Something went wrong</span></div>';
+        feedback.classList.remove("hidden");
+      }
+      btn.classList.remove("loading");
+    });
+  </script>
+</Base>

@@ -1,71 +1,13 @@
 ---
-/**
- * Site footer with links and copyright.
- */
 ---
 
-<footer class="border-t border-border bg-background">
-  <div class="mx-auto max-w-6xl px-6 py-12">
-    <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-      <!-- Brand -->
-      <div class="sm:col-span-2 lg:col-span-1">
-        <a href="/" class="text-lg font-bold tracking-tight text-foreground">Store</a>
-        <p class="mt-3 text-sm text-muted-foreground">
-          Quality products, curated with care. Built on EmDash CMS.
-        </p>
-      </div>
-
-      <!-- Shop -->
-      <div>
-        <h3 class="text-sm font-semibold text-foreground">Shop</h3>
-        <ul class="mt-3 space-y-2">
-          <li>
-            <a href="/shop" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              All Products
-            </a>
-          </li>
-          <li>
-            <a href="/cart" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Cart
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Company -->
-      <div>
-        <h3 class="text-sm font-semibold text-foreground">Company</h3>
-        <ul class="mt-3 space-y-2">
-          <li>
-            <a href="/posts" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Blog
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Legal -->
-      <div>
-        <h3 class="text-sm font-semibold text-foreground">Legal</h3>
-        <ul class="mt-3 space-y-2">
-          <li>
-            <a href="#" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Privacy Policy
-            </a>
-          </li>
-          <li>
-            <a href="#" class="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Terms of Service
-            </a>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="mt-12 border-t border-border pt-8">
-      <p class="text-center text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} Store. All rights reserved.
-      </p>
-    </div>
-  </div>
+<footer class="footer footer-center bg-base-200 text-base-content p-10 mt-16">
+  <nav class="grid grid-flow-col gap-4">
+    <a href="/shop" class="link link-hover">Shop</a>
+    <a href="/posts" class="link link-hover">Blog</a>
+    <a href="/cart" class="link link-hover">Cart</a>
+  </nav>
+  <aside>
+    <p>&copy; {new Date().getFullYear()} Store. Built with EmDash CMS.</p>
+  </aside>
 </footer>

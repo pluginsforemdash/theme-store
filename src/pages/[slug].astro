@@ -1,99 +1,22 @@
 ---
-/**
- * Dynamic CMS pages (about, contact, etc.).
- * Loaded server-side via EmDash.
- */
-import Base from "../layouts/Base.astro";
 import { getEmDashEntry } from "emdash";
 import { PortableText } from "emdash/ui";
+import Base from "../layouts/Base.astro";
 
 export const prerender = false;
-
 const { slug } = Astro.params;
-const { entry: page, cacheHint } = await getEmDashEntry("pages", slug!);
-if (cacheHint) Astro.cache.set(cacheHint);
+if (!slug) return Astro.redirect("/404");
 
-if (!page) {
-  return Astro.redirect("/404");
-}
+const { entry: page, cacheHint } = await getEmDashEntry("pages", slug);
+if (!page) return Astro.redirect("/404");
+Astro.cache.set(cacheHint);
 ---
 
-<Base
-  title={`${page.data.title} — Store`}
-  kind="content"
-  content={{ collection: "pages", id: page.id, slug: page.data.slug }}
->
-  <section class="py-12 sm:py-16">
-    <div class="mx-auto max-w-3xl px-6">
-      <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-        {page.data.title}
-      </h1>
-
-      {page.data.content && (
-        <div class="prose-store mt-8">
-          <PortableText value={page.data.content} />
-        </div>
-      )}
+<Base title={page.data.title} kind="content" content={{ collection: "pages", id: page.data.id, slug }}>
+  <div class="max-w-3xl mx-auto px-6 py-10">
+    <h1 class="text-4xl font-bold mb-8">{page.data.title}</h1>
+    <div class="prose prose-lg max-w-none">
+      <PortableText value={page.data.content} />
     </div>
-  </section>
+  </div>
 </Base>
-
-<style>
-  .prose-store :global(h1),
-  .prose-store :global(h2),
-  .prose-store :global(h3),
-  .prose-store :global(h4) {
-    color: var(--color-foreground);
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-  }
-  .prose-store :global(h2) {
-    font-size: 1.5rem;
-  }
-  .prose-store :global(h3) {
-    font-size: 1.25rem;
-  }
-  .prose-store :global(p) {
-    color: var(--color-muted-foreground);
-    line-height: 1.75;
-    margin-bottom: 1.25rem;
-  }
-  .prose-store :global(a) {
-    color: var(--color-foreground);
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
-  .prose-store :global(a:hover) {
-    color: var(--color-muted-foreground);
-  }
-  .prose-store :global(ul),
-  .prose-store :global(ol) {
-    color: var(--color-muted-foreground);
-    padding-left: 1.5rem;
-    margin-bottom: 1.25rem;
-  }
-  .prose-store :global(li) {
-    margin-bottom: 0.5rem;
-  }
-  .prose-store :global(blockquote) {
-    border-left: 3px solid var(--color-border);
-    padding-left: 1rem;
-    color: var(--color-muted-foreground);
-    font-style: italic;
-    margin: 1.5rem 0;
-  }
-  .prose-store :global(pre) {
-    background: var(--color-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: 1rem;
-    overflow-x: auto;
-    margin: 1.5rem 0;
-  }
-  .prose-store :global(code) {
-    color: var(--color-foreground);
-    font-size: 0.875rem;
-  }
-</style>

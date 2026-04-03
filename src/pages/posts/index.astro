@@ -1,63 +1,41 @@
 ---
-/**
- * Blog listing page. Posts loaded server-side via EmDash.
- */
-import Base from "../../layouts/Base.astro";
 import { getEmDashCollection } from "emdash";
-import { EmDashImage } from "emdash/ui";
+import { Image } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
 
 export const prerender = false;
 
-const { entries: posts, cacheHint } = await getEmDashCollection("posts", {
-  status: "published",
-  limit: 20,
-});
-if (cacheHint) Astro.cache.set(cacheHint);
+let posts: any[] = [];
+try {
+  const result = await getEmDashCollection("posts", { orderBy: { published_at: "desc" } });
+  posts = result.entries;
+  Astro.cache.set(result.cacheHint);
+} catch {}
 ---
 
-<Base title="Blog — Store" description="Stories, guides, and updates from our team.">
-  <section class="py-12 sm:py-16">
-    <div class="mx-auto max-w-6xl px-6">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight text-foreground">Journal</h1>
-        <p class="mt-2 text-muted-foreground">Stories, guides, and updates.</p>
-      </div>
+<Base title="Blog" description="Latest articles and updates">
+  <div class="max-w-4xl mx-auto px-6 py-10">
+    <h1 class="text-3xl font-bold mb-8">Blog</h1>
 
-      {posts.length === 0 ? (
-        <div class="py-20 text-center">
-          <h3 class="text-lg font-medium text-foreground">No posts yet</h3>
-          <p class="mt-2 text-sm text-muted-foreground">Check back soon for new articles.</p>
-        </div>
-      ) : (
-        <div class="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post) => (
-            <a href={`/posts/${post.data.slug}`} class="group">
-              {post.data.featured_image ? (
-                <div class="aspect-[16/9] overflow-hidden rounded-lg border border-border bg-secondary">
-                  <EmDashImage
-                    image={post.data.featured_image}
-                    class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-              ) : (
-                <div class="flex aspect-[16/9] items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
-                  <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                  </svg>
-                </div>
+    {posts.length === 0 ? (
+      <p class="opacity-60">No posts yet. <a href="/_emdash/admin/content/posts/new" class="link link-primary">Create one</a>.</p>
+    ) : (
+      <div class="space-y-6">
+        {posts.map((post) => (
+          <a href={`/posts/${post.id}`} class="card card-side bg-base-200 hover:shadow-md transition-shadow">
+            {post.data.featured_image && (
+              <figure class="w-48 shrink-0"><Image image={post.data.featured_image} /></figure>
+            )}
+            <div class="card-body">
+              <h2 class="card-title">{post.data.title}</h2>
+              {post.data.excerpt && <p class="opacity-60 line-clamp-2">{post.data.excerpt}</p>}
+              {post.data.publishedAt && (
+                <p class="text-sm opacity-40">{post.data.publishedAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
               )}
-              <div class="mt-4">
-                <h2 class="text-lg font-semibold text-foreground transition-colors group-hover:text-muted-foreground">
-                  {post.data.title}
-                </h2>
-                {post.data.excerpt && (
-                  <p class="mt-2 line-clamp-2 text-sm text-muted-foreground">{post.data.excerpt}</p>
-                )}
-              </div>
-            </a>
-          ))}
-        </div>
-      )}
-    </div>
-  </section>
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
 </Base>
