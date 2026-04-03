@@ -1,10 +1,34 @@
-# EmDash Store Theme — shadcn/ui
+# EmDash Store Theme
 
-A complete e-commerce storefront theme for [EmDash CMS](https://github.com/emdash-cms/emdash), powered by the [Commerce plugin](https://github.com/pluginsforemdash/commerce). Dark theme with shadcn/ui styling.
+A complete e-commerce storefront for [EmDash CMS](https://github.com/emdash-cms/emdash), powered by the [Commerce plugin](https://github.com/pluginsforemdash/commerce). 30+ DaisyUI themes. Fully server-rendered with client-side cart and checkout.
 
-## Preview
+## One-Command Setup
 
-Built with Astro, Tailwind CSS 4, and React. Fully server-rendered with client-side cart and checkout interactions.
+```bash
+git clone https://github.com/pluginsforemdash/theme-store.git my-store
+cd my-store
+bash setup.sh
+```
+
+The setup script will:
+1. Ask for your store name
+2. Install dependencies
+3. Create a Cloudflare D1 database and R2 bucket
+4. Generate your `wrangler.jsonc` config
+5. Build and deploy to Cloudflare Workers
+
+After deploy, visit `your-store.workers.dev/_emdash/admin` to complete setup, add your Stripe key, and start adding products.
+
+## Local Development
+
+```bash
+git clone https://github.com/pluginsforemdash/theme-store.git my-store
+cd my-store
+npm install
+npm run dev
+```
+
+Visit `http://localhost:4321/_emdash/api/setup/dev-bypass?redirect=/_emdash/admin` to set up the admin, then start adding products.
 
 ## Pages
 
