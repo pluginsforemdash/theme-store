@@ -1,28 +1,13 @@
 {
-	"name": "theme-store",
-	"compatibility_date": "2025-04-01",
-	"compatibility_flags": ["nodejs_compat"],
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "theme-store-db",
-			"database_id": "<YOUR_D1_DATABASE_ID>"
-		}
-	],
-	"r2_buckets": [
-		{
-			"binding": "MEDIA",
-			"bucket_name": "theme-store-media"
-		}
-	],
-	"observability": {
-		"enabled": false,
-		"logs": {
-			"enabled": true,
-			"invocation_logs": true
-		}
+	"compatibility_date": "2026-04-03",
+	"compatibility_flags": ["global_fetch_strictly_public"],
+	"name": "emdash-theme-store",
+	"main": "@astrojs/cloudflare/entrypoints/server",
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS"
 	},
-	"vars": {
-		"SITE_URL": "https://demo.pluginsforemdash.com"
+	"observability": {
+		"enabled": true
 	}
 }

@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "npm run build && wrangler dev",
+    "generate-types": "wrangler types",
+    "deploy": "npm run build && wrangler deploy"
   },
   "overrides": {
     "vite": "^7"
@@ -15,7 +17,6 @@
     "@astrojs/cloudflare": "^13.1.7",
     "@astrojs/node": "^10.0.0",
     "@astrojs/react": "^5.0.0",
-    "@emdash-cms/cloudflare": "^0.1.0",
     "@tailwindcss/vite": "^4.2.0",
     "astro": "^6.1.0",
     "better-sqlite3": "^12.0.0",
@@ -25,5 +26,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwindcss": "^4.2.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.80.0"
   }
 }
